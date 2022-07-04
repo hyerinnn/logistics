@@ -1,0 +1,173 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: '2'
+
+
+networks:
+  b2b:
+
+services:
+
+  orderer.orderer.com:
+    container_name: orderer.orderer.com
+    image: hyperledger/fabric-orderer:latest
+    environment:
+      - FABRIC_LOGGING_SPEC=DEBUG
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=/var/hyperledger/orderer/orderer.genesis.block
+      - ORDERER_GENERAL_LOCALMSPID=ordererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
+      # enabled TLS
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+    command: orderer
+    volumes:
+        - ./channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+        - ./crypto-config/ordererOrganizations/orderer.com/orderers/orderer.orderer.com/msp:/var/hyperledger/orderer/msp
+        - ./crypto-config/ordererOrganizations/orderer.com/orderers/orderer.orderer.com/tls:/var/hyperledger/orderer/tls
+        - ./production/orderer.orderer.com:/var/hyperledger/production/orderer
+    ports:
+      - 7050:7050
+    networks:
+      - b2b
+
+
+  peer0.b2bOrg.logistics:
+    container_name: peer0.b2bOrg.logistics
+    image: hyperledger/fabric-peer:latest
+    environment:
+        # peer-base
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock 
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=net_b2b
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_GOSSIP_USELEADERELECTION=true
+      - CORE_PEER_GOSSIP_ORGLEADER=false
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      
+        # couch db  
+        #- CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+        #- CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb0:5984
+        #- CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+        #- CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+
+      - CORE_PEER_ID=peer0.b2bOrg.logistics
+      - CORE_PEER_ADDRESS=peer0.b2bOrg.logistics:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.b2bOrg.logistics:7052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
+        # - CORE_PEER_GOSSIP_BOOTSTRAP=peer1.b2bOrg.logistics:8051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.b2bOrg.logistics:7051
+      - CORE_PEER_LOCALMSPID=b2bOrgMSP
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config/peerOrganizations/b2bOrg.logistics/peers/peer0.b2bOrg.logistics/msp:/etc/hyperledger/fabric/msp
+        - ./crypto-config/peerOrganizations/b2bOrg.logistics/peers/peer0.b2bOrg.logistics/tls:/etc/hyperledger/fabric/tls
+        - ./production/peer0.b2bOrg.logistics:/var/hyperledger/production
+    ports:
+      - 7051:7051
+        #depends_on:
+      #- couchdb0
+    networks:
+      - b2b
+
+  peer1.b2bOrg.logistics:
+    container_name: peer1.b2bOrg.logistics
+    image: hyperledger/fabric-peer:latest
+    environment:
+     # peer-base
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=net_b2b
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_GOSSIP_USELEADERELECTION=true
+      - CORE_PEER_GOSSIP_ORGLEADER=false
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+
+        # couch db
+        #- CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+        #- CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb1:5984
+        #- CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+        #- CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+
+      - CORE_PEER_ID=peer1.b2bOrg.logistics
+      - CORE_PEER_ADDRESS=peer1.b2bOrg.logistics:8051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:8051
+      - CORE_PEER_CHAINCODEADDRESS=peer1.b2bOrg.logistics:8052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:8052
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.b2bOrg.logistics:8051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.b2bOrg.logistics:7051
+      - CORE_PEER_LOCALMSPID=b2bOrgMSP
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start        
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config/peerOrganizations/b2bOrg.logistics/peers/peer1.b2bOrg.logistics/msp:/etc/hyperledger/fabric/msp
+        - ./crypto-config/peerOrganizations/b2bOrg.logistics/peers/peer1.b2bOrg.logistics/tls:/etc/hyperledger/fabric/tls
+        - ./production/peer1.b2bOrg.logistics:/var/hyperledger/production
+    ports:
+      - 8051:8051
+        #depends_on:
+      #- couchdb1        
+    networks:
+      - b2b
+
+  peer2.b2bOrg.logistics:
+    container_name: peer2.b2bOrg.logistics
+    image: hyperledger/fabric-peer:latest
+    environment:
+     # peer-base
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=net_b2b
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_GOSSIP_USELEADERELECTION=true
+      - CORE_PEER_GOSSIP_ORGLEADER=false
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+
+        # couch db
+        #- CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+        #- CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb2:5984
+        #- CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+        #- CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+
+      - CORE_PEER_ID=peer2.b2bOrg.logistics
+      - CORE_PEER_ADDRESS=peer2.b2bOrg.logistics:9051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:9051
+      - CORE_PEER_CHAINCODEADDRESS=peer1.b2bOrg.logistics:9052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:9052
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.b2bOrg.logistics:9051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.b2bOrg.logistics:7051
+      - CORE_PEER_LOCALMSPID=b2bOrgMSP
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config/peerOrganizations/b2bOrg.logistics/peers/peer2.b2bOrg.logistics/msp:/etc/hyperledger/fabric/msp
+        - ./crypto-config/peerOrganizations/b2bOrg.logistics/peers/peer2.b2bOrg.logistics/tls:/etc/hyperledger/fabric/tls
+        - ./production/peer2.b2bOrg.logistics:/var/hyperledger/production
+    ports:
+      - 9051:9051
+        #    depends_on:
+        #- couchdb2
+    networks:
+      - b2b
+
+

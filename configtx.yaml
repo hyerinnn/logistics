@@ -1,0 +1,200 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+################################################################################
+#
+#   Section: Organizations
+#
+################################################################################
+Organizations:
+
+    - &orderer
+        Name: orderer
+        ID: ordererMSP
+        MSPDir: crypto-config/ordererOrganizations/orderer.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('ordererMSP.member')"
+            Writers:
+                Type: Signature
+                Rule: "OR('ordererMSP.member')"
+            Admins:
+                Type: Signature
+                Rule: "OR('ordererMSP.admin')"
+
+    - &b2bOrg
+        Name: b2bOrg
+        ID: b2bOrgMSP
+        MSPDir: crypto-config/peerOrganizations/b2bOrg.logistics/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('b2bOrgMSP.admin', 'b2bOrgMSP.peer', 'b2bOrgMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('b2bOrgMSP.admin','b2bOrgMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('b2bOrgMSP.admin')"
+
+        AnchorPeers:
+            - Host: peer0.b2bOrg.logistics
+              Port: 7051
+
+
+
+
+################################################################################
+#
+#   SECTION: Capabilities
+#
+################################################################################
+Capabilities:
+    Channel: &ChannelCapabilities
+        V1_4_3: true
+        V1_3: false
+        V1_1: false
+    Orderer: &OrdererCapabilities
+        V1_4_2: true
+        V1_1: false
+    Application: &ApplicationCapabilities
+        V1_4_2: true
+        V1_3: false
+        V1_2: false
+        V1_1: false
+
+################################################################################
+#
+#   SECTION: Application
+#
+################################################################################
+Application: &ApplicationDefaults
+
+    Organizations:
+
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+              #LifecycleEndorsement:
+          #            Type: ImplicitMeta
+          # Rule: "MAJORITY Endorsement"
+          #Endorsement:
+          #  Type: ImplicitMeta
+          #  Rule: "MAJORITY Endorsement"
+
+    Capabilities:
+        <<: *ApplicationCapabilities
+################################################################################
+#
+#   SECTION: Orderer
+#
+################################################################################
+Orderer: &OrdererDefaults
+    OrdererType: solo
+    Addresses:
+        - orderer.orderer.com:7050
+    BatchTimeout: 2s
+    BatchSize:
+        MaxMessageCount: 10
+        AbsoluteMaxBytes: 99 MB
+        PreferredMaxBytes: 512 KB
+              #   EtcdRaft:
+              #        Consenters:
+              #            - Host: orderer.example.com
+              #              Port: 7050
+              #              ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+              #              ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+              #            - Host: orderer2.example.com
+              #              Port: 7050
+              #              ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer2.example.com/tls/server.crt
+              #              ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer2.example.com/tls/server.crt
+              #            - Host: orderer3.example.com
+              #              Port: 7050
+              #              ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer3.example.com/tls/server.crt
+              #              ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer3.example.com/tls/server.crt
+              #            - Host: orderer4.example.com
+              #              Port: 7050
+              #              ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer4.example.com/tls/server.crt
+              #              ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer4.example.com/tls/server.crt
+              #            - Host: orderer5.example.com
+              #              Port: 7050
+              #              ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer5.example.com/tls/server.crt
+              #              ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer5.example.com/tls/server.crt
+              #
+    Organizations:
+
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+        BlockValidation:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+
+################################################################################
+#
+#   CHANNEL
+#
+################################################################################
+Channel: &ChannelDefaults
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+
+    Capabilities:
+        <<: *ChannelCapabilities
+
+################################################################################
+#
+#   Profile
+#
+################################################################################
+Profiles:
+
+    B2BOrgOrdererGenesis:
+        <<: *ChannelDefaults
+        orderer:
+            <<: *OrdererDefaults
+            Organizations:
+                - *orderer
+            Capabilities:
+                <<: *OrdererCapabilities
+        Consortiums:
+            SampleConsortium:
+                Organizations:
+                    - *b2bOrg
+        
+    B2BOrgChannel:
+        Consortium: SampleConsortium
+        <<: *ChannelDefaults
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *b2bOrg
+            Capabilities:
+                <<: *ApplicationCapabilities
+
