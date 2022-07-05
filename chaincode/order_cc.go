@@ -1,26 +1,4 @@
-/*
-Copyright IBM Corp. 2016 All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-		 http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package main
-
-//WARNING - this chaincode's ID is hard-coded in chaincode_example04 to illustrate one way of
-//calling chaincode from a chaincode. If this example is modified, chaincode_example04.go has
-//to be modified as well with the new ID of chaincode_example02.
-//chaincode_example05 show's how chaincode ID can be passed in as a parameter instead of
-//hard-coding.
 
 import (
 	"fmt"
@@ -29,18 +7,25 @@ import (
 	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
-// Define the Smart Contract structure
 type SmartContract struct {
 }
-
 
 
 // 구조체 정의 부분
 type OrderLedger struct {
 
-	OrderID string `json:"orderID"`
+	OrderID string `json:"orderID"`							
+	OrderHash string `json:"orderHash"`
+	FrghtInfo  string `json:"frghtInfo"`
 	TrnsprtPrdlstCode  string `json:"trnsprtPrdlstCode"`
-	
+	OnAdd  string `json:onAdd"`
+	OffAdd  string `json:"offAdd"`
+	LoadDe  string `json:"loadDe"`
+	UnloadDe  string `json:"unloadDe"`
+	MemID  string `json:"memID"`
+	//Tel  string `json:"tel"`
+	Pay  string `json:"pay"`
+	RegTimeRegTime  string `json:"regTime"`	
 }
 
 
@@ -58,49 +43,6 @@ func (s *SmartContract) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
-/*
-// 기존 init 샘플코드
-func (t *SmartContract) Init(stub shim.ChaincodeStubInterface) pb.Response {
-	fmt.Println("ex02 Init")
-	_, args := stub.GetFunctionAndParameters()
-	var A, B string    // Entities
-	var Aval, Bval int // Asset holdings
-	var err error
-
-	if len(args) != 4 {
-		return shim.Error("Incorrect number of arguments. Expecting 4")
-	}
-
-	// Initialize the chaincode
-	A = args[0]
-	Aval, err = strconv.Atoi(args[1])
-	if err != nil {
-		return shim.Error("Expecting integer value for asset holding")
-	}
-	B = args[2]
-	Bval, err = strconv.Atoi(args[3])
-	if err != nil {
-		return shim.Error("Expecting integer value for asset holding")
-	}
-	fmt.Printf("Aval = %d, Bval = %d\n", Aval, Bval)
-
-	// Write the state to the ledger
-	err = stub.PutState(A, []byte(strconv.Itoa(Aval)))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
-	err = stub.PutState(B, []byte(strconv.Itoa(Bval)))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
-	return shim.Success(nil)
-}
-*/
-
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -112,17 +54,15 @@ func (t *SmartContract) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	// 사용자가 호출한 함수와 매개변수를 받아 function, args에 각각 넣어줌
 	function, args := stub.GetFunctionAndParameters()
 
-	fmt.Println("function 저장 ")
 	fmt.Println("function : " + function)
 
 	// 호출된 함수명에 맞게 분기처리 하는 부분
 	if function == "registerOrder" {
-		fmt.Println("######## registerOrder 함수 분기 if문 ################## ")
 		return t.registerOrder(stub, args)
 	} else if function == "delete" {
 		return t.delete(stub, args)
-	} else if function == "query" {
-		return t.query(stub, args)
+	} else if function == "getOrderById" {
+		return t.getOrderById(stub, args)
 	}
 
 	return shim.Error("Invalid Smart Contract function name.")
@@ -136,13 +76,24 @@ func (t *SmartContract) registerOrder(stub shim.ChaincodeStubInterface, args []s
 	fmt.Println("######## registerOrder 함수 진입 ################## ")
 
 
-	// 운송장번호, 해시값 필수로 매개변수 2개 아닐 시 오류
-	if len(args) != 2 {
-		return shim.Error("registerOrder 함수 호출 : Incorrect number of arguments. Expecting 2")
+	// 운송장번호 필수값 없을 시 오류
+	if args[0] == "" {
+		return shim.Error("registerOrder 함수 호출 : orderId가 없어서 오류")
 	}
 
-	var order = OrderLedger{OrderID: args[0], TrnsprtPrdlstCode: args[1]}
-	//var order = OrderLedger{OrderID: args[1]}
+	var order = OrderLedger{
+		OrderID: args[0], 
+		OrderHash: args[1], 
+		FrghtInfo: args[2], 
+		TrnsprtPrdlstCode: args[3],  
+		OnAdd: args[4],  
+		OffAdd: args[5],  
+		LoadDe: args[6],  
+		UnloadDe: args[7], 
+		MemID: args[8], 
+		Pay: args[9],
+		RegTimeRegTime: args[10],}
+
 
 	// json 데이터를 []byte형태로 변경 (마샬링)
 	orderAsBytes, _ := json.Marshal(order)
@@ -170,7 +121,7 @@ func (t *SmartContract) registerOrder(stub shim.ChaincodeStubInterface, args []s
 
 
 // query callback representing the query of a chaincode
-func (t *SmartContract) query(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SmartContract) getOrderById(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var orderID string // Entities
 	var err error
 	orderID = args[0]
