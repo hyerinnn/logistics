@@ -28,14 +28,14 @@ docker exec cli peer channel join -b  b2bchannel.block
 docker exec  -e CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/b2bOrg.logistics/peers/peer1.b2bOrg.logistics/tls/ca.crt -e  CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/b2bOrg.logistics/peers/peer1.b2bOrg.logistics/tls/server.crt -e CORE_PEER_ADDRESS=peer1.b2bOrg.logistics:8051  cli peer channel join -b  b2bchannel.block
 
 # peer2 채널 조인
-docker exec  -e CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/b2bOrg.logistics/peers/peer2.b2bOrg.logistics/tls/ca.crt -e  CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/b2bOrg.logistics/peers/peer2.b2bOrg.logistics/tls/server.crt -e CORE_PEER_ADDRESS=peer2.b2bOrg.logistics:8051  cli peer channel join -b  b2bchannel.block
+docker exec  -e CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/b2bOrg.logistics/peers/peer2.b2bOrg.logistics/tls/ca.crt -e  CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/b2bOrg.logistics/peers/peer2.b2bOrg.logistics/tls/server.crt -e CORE_PEER_ADDRESS=peer2.b2bOrg.logistics:9051  cli peer channel join -b  b2bchannel.block
 
 
 # 8. 앵커피어 정보를(4번에서 만든 트랜잭션) 채널에 업데이트
 docker exec cli  peer channel update -o orderer.orderer.com:7050 -c b2bchannel -f ./channel-artifacts/b2bOrgMSP.tx --tls true --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/orderer.com/orderers/orderer.orderer.com/msp/tlscacerts/tlsca.orderer.com-cert.pem
 
 
-# 9. 체인코드 설치
+# 9. peer0에 체인코드 설치
 docker exec cli  peer chaincode install -n ordercc -v 1.0 -l golang -p github.com/chaincode/
 
 
