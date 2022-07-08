@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 	"encoding/json"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
@@ -45,48 +46,6 @@ func (s *SmartContract) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	return shim.Success(nil)
 }
 
-/*
-// 기존 init 샘플코드
-func (t *SmartContract) Init(stub shim.ChaincodeStubInterface) pb.Response {
-	fmt.Println("ex02 Init")
-	_, args := stub.GetFunctionAndParameters()
-	var A, B string    // Entities
-	var Aval, Bval int // Asset holdings
-	var err error
-
-	if len(args) != 4 {
-		return shim.Error("Incorrect number of arguments. Expecting 4")
-	}
-
-	// Initialize the chaincode
-	A = args[0]
-	Aval, err = strconv.Atoi(args[1])
-	if err != nil {
-		return shim.Error("Expecting integer value for asset holding")
-	}
-	B = args[2]
-	Bval, err = strconv.Atoi(args[3])
-	if err != nil {
-		return shim.Error("Expecting integer value for asset holding")
-	}
-	fmt.Printf("Aval = %d, Bval = %d\n", Aval, Bval)
-
-	// Write the state to the ledger
-	err = stub.PutState(A, []byte(strconv.Itoa(Aval)))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
-	err = stub.PutState(B, []byte(strconv.Itoa(Bval)))
-	if err != nil {
-		return shim.Error(err.Error())
-	}
-
-	return shim.Success(nil)
-}
-*/
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -104,6 +63,12 @@ func (t *SmartContract) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	fmt.Println("function : " + function)
 
 
+        time := time.Now()
+        fmt.Println(time)
+
+        timeFmt := time.Format("20060102150405")
+        fmt.Println("####### 포맷  : " + timeFmt)
+
 	// 호출된 함수명에 맞게 분기처리 하는 부분
 	if function == "registerOrder" {
 		return t.registerOrder(stub, args)		// 운송장 등록
@@ -112,6 +77,7 @@ func (t *SmartContract) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	} else if function == "readOrder" {
 		return t.readOrder(stub, args)			// 운송장 조회
 	}
+
 
 	return shim.Error("IF-BLC-301-004| Invalid Smart Contract function name.")
 }
@@ -130,6 +96,10 @@ func (t *SmartContract) registerOrder(stub shim.ChaincodeStubInterface, args []s
 	}
 
 
+        time := time.Now()
+        timeFmt := time.Format("20060102150405")
+
+
 	var order = OrderLedger{
 		OrderID: args[0], 
 		OrderHash: args[1], 
@@ -141,7 +111,7 @@ func (t *SmartContract) registerOrder(stub shim.ChaincodeStubInterface, args []s
 		UnloadDe: args[7], 
 		MemID: args[8], 
 		Pay: args[9],
-		RegTime: args[10],
+		RegTime: timeFmt,
 	}
 
 	//현재시간추출 (테스트 필요)
