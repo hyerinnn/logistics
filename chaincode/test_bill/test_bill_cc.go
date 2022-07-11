@@ -98,6 +98,7 @@ func (t *SmartContract) registerMKBill(stub shim.ChaincodeStubInterface, args []
 
 
 	// 이미 등록된 아이디가 있는 경우 에러
+
 	checkOrderExists, err := stub.GetState(bill.OrderID)
 	if err != nil {
 		return shim.Error("Failed to getState")
@@ -116,7 +117,7 @@ func (t *SmartContract) registerMKBill(stub shim.ChaincodeStubInterface, args []
 	return shim.Success(nil)
 }
 
-// 배송정보 단건 조회
+
 func (t *SmartContract) readMKBill(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var orderID string 
 	var err error
@@ -130,13 +131,6 @@ func (t *SmartContract) readMKBill(stub shim.ChaincodeStubInterface, args []stri
 	if err != nil {
 		resultData := "{\"Error\":\"Failed to get state for " + orderID + "\"}"
 		return shim.Error(resultData)
-	}
-
-
-
-	// 데이터가 존재하지 않을  경우 메세지 처리
-	if orderAsBytes == nil {
-		return shim.Error("IF-BLC-301-002| Data searched by orderID\"+\"" + orderID + " doesn't exists")
 	}
 
 
