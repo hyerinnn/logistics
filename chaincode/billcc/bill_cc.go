@@ -105,7 +105,7 @@ func (t *SmartContract) registerMKBill(stub shim.ChaincodeStubInterface, args []
 	}
 
 
-	err := stub.PutState(bill.OrderID, billAsBytes)
+	err = stub.PutState(bill.OrderID, billAsBytes)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
