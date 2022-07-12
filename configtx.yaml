@@ -103,7 +103,7 @@ Application: &ApplicationDefaults
 #
 ################################################################################
 Orderer: &OrdererDefaults
-    OrdererType: etcdraft                  # 오더러 타입 :   solo, raft, (kafka는 이제 안씀)
+    OrdererType: solo                  # 오더러 타입 :   solo, raft, (kafka는 이제 안씀)
     Addresses:
         - orderer.orderer.com:7050
     BatchTimeout: 2s                       # 블록 생성 시간
@@ -111,12 +111,12 @@ Orderer: &OrdererDefaults
         MaxMessageCount: 10                # 블록에 저장될 수 있는 최대 트랜잭션 수
         AbsoluteMaxBytes: 99 MB            # 블록에 저장할 수 있는 최대 데이터 크기
         PreferredMaxBytes: 512 KB          # 블록이 저장할 수 있는 최소 데이터 크기
-    EtcdRaft:
-        Consenters:
-            - Host: orderer.example.com
-              Port: 7050
-              ClientTLSCert: crypto-config/ordererOrganizations/orderer.com/orderers/orderer.orderer.com/tls/server.crt
-              ServerTLSCert: crypto-config/ordererOrganizations/orderer.com/orderers/orderer.orderer.com/tls/server.crt
+          #    EtcdRaft:
+          #       Consenters:
+          #            - Host: orderer.example.com
+          #              Port: 7050
+          #              ClientTLSCert: crypto-config/ordererOrganizations/orderer.com/orderers/orderer.orderer.com/tls/server.crt
+          #              ServerTLSCert: crypto-config/ordererOrganizations/orderer.com/orderers/orderer.orderer.com/tls/server.crt
               #            - Host: orderer2.example.com
               #              Port: 7050
               #              ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer2.example.com/tls/server.crt
@@ -203,31 +203,3 @@ Profiles:
             Capabilities:
                 <<: *ApplicationCapabilities
 
-    B2BOrgMultiNodeEtcdRaft:
-        <<: *ChannelDefaults
-        Capabilities:
-            <<: *ChannelCapabilities
-        Orderer:
-            <<: *OrdererDefaults
-            OrdererType: etcdraft
-            EtcdRaft:
-                Consenters:
-                - Host: orderer.orderer.com
-                  Port: 7050
-                  ClientTLSCert: crypto-config/ordererOrganizations/orderer.com/orderers/orderer.orderer.com/tls/server.crt
-                  ServerTLSCert: crypto-config/ordererOrganizations/orderer.com/orderers/orderer.orderer.com/tls/server.crt
-            Addresses:
-                - orderer.orderer.com:7050
-
-            Organizations:
-            - *orderer
-            Capabilities:
-                <<: *OrdererCapabilities
-        Application:
-            <<: *ApplicationDefaults
-            Organizations:
-            - <<: *orderer
-        Consortiums:
-            SampleConsortium:
-                Organizations:
-                - *b2bOrg
