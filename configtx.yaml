@@ -12,13 +12,13 @@
 Organizations:
 
     - &orderer
-        Name: orderer
+        Name: orderer           # profiles섹션에서 참조하기 위한 이름!!! 하단 profiles에서의 네임과 같아야 함
         ID: ordererMSP
         MSPDir: crypto-config/ordererOrganizations/orderer.com/msp
         Policies:
             Readers:
-                Type: Signature
-                Rule: "OR('ordererMSP.member')"
+                Type: Signature   # Signature policy : 반드시 필요한 서명을 명시하는 정의로  and, or를 사용하여 유연하게 정책 설정이 가능
+                Rule: "OR('ordererMSP.member')"  #odererMSP의 멤버(admin, peer, client) 중 최소 하나의 서명은 필수적
             Writers:
                 Type: Signature
                 Rule: "OR('ordererMSP.member')"
@@ -33,7 +33,7 @@ Organizations:
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('b2bOrgMSP.admin', 'b2bOrgMSP.peer', 'b2bOrgMSP.client')"
+                Rule: "OR('b2bOrgMSP.admin', 'b2bOrgMSP.peer', 'b2bOrgMSP.client')"         # OR(‘chrOrgMSP.member’) 과 동일
             Writers:
                 Type: Signature
                 Rule: "OR('b2bOrgMSP.admin','b2bOrgMSP.client')"
@@ -54,14 +54,14 @@ Organizations:
 #
 ################################################################################
 Capabilities:
-    Channel: &ChannelCapabilities
-        V1_4_3: true
+    Channel: &ChannelCapabilities       # channel 레벨의 설정은 해당 채널에 속한 orderer와 peer에도 적용됨
+        V1_4_3: true                    # 최소 1.4.3 이상 버전에서 호환된다는 의미
         V1_3: false
         V1_1: false
     Orderer: &OrdererCapabilities
         V1_4_2: true
         V1_1: false
-    Application: &ApplicationCapabilities
+    Application: &ApplicationCapabilities  # application 레벨의 설정은 peer 네트워크에만 적용
         V1_4_2: true
         V1_3: false
         V1_2: false
@@ -77,44 +77,46 @@ Application: &ApplicationDefaults
     Organizations:
 
     Policies:
-        Readers:
-            Type: ImplicitMeta
-            Rule: "ANY Readers"
-        Writers:
+        Readers:    # 읽기정책(블록 원장 조회)
+            Type: ImplicitMeta               # ImplicitMeta : Signature policy보다 유연하지 않지만 좀 더 세분화된 정책 설정이 가능
+            Rule: "ANY Readers"              # 모든 리더의 서명을 받아야 한다는 정책
+        Writers:    # 쓰기정책(블록 원장 업데이트)
             Type: ImplicitMeta
             Rule: "ANY Writers"
-        Admins:
+        Admins:     # 관리정책(네트워크 운영 및 관리 권한)
             Type: ImplicitMeta
-            Rule: "MAJORITY Admins"
-              #LifecycleEndorsement:
-          #            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"          # admin 중에서 과반수 이상이 참여해야 한다는 정책
+    
+        #LifecycleEndorsement:
+          # Type: ImplicitMeta
           # Rule: "MAJORITY Endorsement"
-          #Endorsement:
+        #Endorsement:
           #  Type: ImplicitMeta
           #  Rule: "MAJORITY Endorsement"
 
     Capabilities:
-        <<: *ApplicationCapabilities
+        <<: *ApplicationCapabilities         # ApplicationCapabilities의 정의를 참조하여 여기 설정과 병합하겠다는 의미( << : 병합,  * : 참조)
+
 ################################################################################
 #
 #   SECTION: Orderer
 #
 ################################################################################
 Orderer: &OrdererDefaults
-    OrdererType: solo
+    OrdererType: raft                      # 오더러 타입 :   solo, raft, (kafka는 이제 안씀)
     Addresses:
         - orderer.orderer.com:7050
-    BatchTimeout: 2s
+    BatchTimeout: 2s                       # 블록 생성 시간
     BatchSize:
-        MaxMessageCount: 10
-        AbsoluteMaxBytes: 99 MB
-        PreferredMaxBytes: 512 KB
-              #   EtcdRaft:
-              #        Consenters:
-              #            - Host: orderer.example.com
-              #              Port: 7050
-              #              ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
-              #              ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+        MaxMessageCount: 10                # 블록에 저장될 수 있는 최대 트랜잭션 수
+        AbsoluteMaxBytes: 99 MB            # 블록에 저장할 수 있는 최대 데이터 크기
+        PreferredMaxBytes: 512 KB          # 블록이 저장할 수 있는 최소 데이터 크기
+    EtcdRaft:
+        Consenters:
+            - Host: orderer.example.com
+              Port: 7050
+              ClientTLSCert: crypto-config/ordererOrganizations/orderer.com/orderers/orderer.orderer.com/tls/server.crt
+              ServerTLSCert: crypto-config/ordererOrganizations/orderer.com/orderers/orderer.orderer.com/tls/server.crt
               #            - Host: orderer2.example.com
               #              Port: 7050
               #              ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer2.example.com/tls/server.crt
@@ -148,11 +150,13 @@ Orderer: &OrdererDefaults
             Type: ImplicitMeta
             Rule: "ANY Writers"
 
+
 ################################################################################
 #
 #   CHANNEL
 #
 ################################################################################
+
 Channel: &ChannelDefaults
     Policies:
         Readers:
@@ -168,6 +172,7 @@ Channel: &ChannelDefaults
     Capabilities:
         <<: *ChannelCapabilities
 
+
 ################################################################################
 #
 #   Profile
@@ -175,21 +180,21 @@ Channel: &ChannelDefaults
 ################################################################################
 Profiles:
 
-    B2BOrgOrdererGenesis:
+    B2BOrgOrdererGenesis:                 #  프로필명으로써, 해당 명칭은 자유
         <<: *ChannelDefaults
-        orderer:
+        orderer:                          # 처음 작성한 오더러명과 동일해야 함
             <<: *OrdererDefaults
             Organizations:
                 - *orderer
             Capabilities:
                 <<: *OrdererCapabilities
         Consortiums:
-            SampleConsortium:
+            SampleConsortium:             # 아래 Consortium 명칭과 동일해야 함
                 Organizations:
                     - *b2bOrg
         
-    B2BOrgChannel:
-        Consortium: SampleConsortium
+    B2BOrgChannel:                        # 채널생성을 위한 프로필 부분으로 명칭 자유
+        Consortium: SampleConsortium      # Consortium 명칭으로 자유
         <<: *ChannelDefaults
         Application:
             <<: *ApplicationDefaults
