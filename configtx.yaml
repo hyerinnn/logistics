@@ -103,7 +103,7 @@ Application: &ApplicationDefaults
 #
 ################################################################################
 Orderer: &OrdererDefaults
-    OrdererType: raft                      # 오더러 타입 :   solo, raft, (kafka는 이제 안씀)
+    OrdererType: etcdraft                  # 오더러 타입 :   solo, raft, (kafka는 이제 안씀)
     Addresses:
         - orderer.orderer.com:7050
     BatchTimeout: 2s                       # 블록 생성 시간
@@ -203,3 +203,31 @@ Profiles:
             Capabilities:
                 <<: *ApplicationCapabilities
 
+    B2BOrgMultiNodeEtcdRaft:
+        <<: *ChannelDefaults
+        Capabilities:
+            <<: *ChannelCapabilities
+        Orderer:
+            <<: *OrdererDefaults
+            OrdererType: etcdraft
+            EtcdRaft:
+                Consenters:
+                - Host: orderer.orderer.com
+                  Port: 7050
+                  ClientTLSCert: crypto-config/ordererOrganizations/orderer.com/orderers/orderer.orderer.com/tls/server.crt
+                  ServerTLSCert: crypto-config/ordererOrganizations/orderer.com/orderers/orderer.orderer.com/tls/server.crt
+            Addresses:
+                - orderer.orderer.com:7050
+
+            Organizations:
+            - *orderer
+            Capabilities:
+                <<: *OrdererCapabilities
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+            - <<: *orderer
+        Consortiums:
+            SampleConsortium:
+                Organizations:
+                - *b2bOrg
