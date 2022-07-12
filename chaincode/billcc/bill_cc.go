@@ -4,9 +4,7 @@ package main
 
 import (
 	"fmt"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
+	"time"
 	"encoding/json"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
@@ -128,8 +126,7 @@ func (t *SmartContract) readMKBill(stub shim.ChaincodeStubInterface, args []stri
 
 	orderAsBytes, _ := stub.GetState(orderID)
 	if err != nil {
-		resultData := "{\"Error\":\"Failed to get state for " + orderID + "\"}"
-		return shim.Error(resultData)
+		return shim.Error("Error: " + err.Error())
 	}
 
 
