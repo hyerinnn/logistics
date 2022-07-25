@@ -124,7 +124,7 @@ func (t *SmartContract) readMKBill(stub shim.ChaincodeStubInterface, args []stri
 	fmt.Println("######## 쿼리 호출 (orderID :" + orderID + ")########")
 
 
-	orderAsBytes, _ := stub.GetState(orderID)
+	billAsBytes, _ := stub.GetState(orderID)
 	if err != nil {
 		return shim.Error("Error: " + err.Error())
 	}
@@ -132,14 +132,14 @@ func (t *SmartContract) readMKBill(stub shim.ChaincodeStubInterface, args []stri
 
 
 	// 데이터가 존재하지 않을  경우 메세지 처리
-	if orderAsBytes == nil {
+	if billAsBytes == nil {
 		return shim.Error("IF-BLC-301-002| Data searched by orderID\"+\"" + orderID + " doesn't exists")
 	}
 
 
-	resultData := "{\"OrderID\":\"" + orderID + "\",\"data\":\"" + string(orderAsBytes) + "\"}"
+	resultData := "{\"OrderID\":\"" + orderID + "\",\"data\":\"" + string(billAsBytes) + "\"}"
 	fmt.Printf("Query Response:%s\n", resultData)
-	return shim.Success(orderAsBytes)
+	return shim.Success(billAsBytes)
 
 
 }
