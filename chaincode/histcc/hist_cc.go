@@ -15,13 +15,13 @@ type SmartContract struct {
 }
 
 
-type BillLedger struct {
+type HistLedger struct {
 
-	OrderID string `json:"OrderID"`			 // 화물 ID		
-	Code string `json:"Code"`				 // 화물 상태 코드
-	HString string `json:"HString"`			 // 검증 해시값
-	RegID string `json:"RegID"`		 		 // 등록 ID
-	RegTime string `json:"RegTime"`			 // 최초 등록일
+	OrderID string `json:"OrderID"`		// 화물 ID		
+	Code string `json:"Code"`		// 화물 상태 코드
+	HString string `json:"HString"`		// 검증 해시값
+	RegID string `json:"RegID"`		// 등록 ID
+	RegTime string `json:"RegTime"`		// 최초 등록일
 
 }
 
@@ -78,7 +78,7 @@ func (t *SmartContract) regHist(stub shim.ChaincodeStubInterface, args []string)
 	fmt.Println("######## 데이터 테스트 OrderID : " + hist.OrderID)
 
 
-	// 이미 등록된 가 있는 경우 에러
+	// 이미 등록된 아이디가 있는 경우 에러
 	checkOrderExists, err := stub.GetState(hist.OrderID)
 	if err != nil {
 		return shim.Error("Failed to getState")
