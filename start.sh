@@ -36,9 +36,13 @@ docker exec cli  peer channel update -o orderer.orderer.com:7050 -c b2bchannel -
 
 
 # 9. peer0에 체인코드 설치
+### 기업물류용 체인코
 docker exec cli  peer chaincode install -n ordercc -v 1.0 -l golang -p github.com/chaincode/ordercc
 docker exec cli  peer chaincode install -n billcc -v 1.0 -l golang -p github.com/chaincode/billcc
 docker exec cli  peer chaincode install -n histcc -v 1.0 -l golang -p github.com/chaincode/histcc
+
+### 생활물류용 체인코드
+docker exec cli  peer chaincode install -n shippcc -v 1.0 -l golang -p github.com/chaincode/shippcc
 
 # 10. 체인코드 초기화
 docker exec cli  peer chaincode instantiate -o orderer.orderer.com:7050 --tls true --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/orderer.com/orderers/orderer.orderer.com/msp/tlscacerts/tlsca.orderer.com-cert.pem -C b2bchannel -n ordercc -v 1.0 -c '{"Args":[""]}'

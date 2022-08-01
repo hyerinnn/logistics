@@ -51,7 +51,8 @@ func (t *SmartContract) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return t.registerSP(stub, args)
 		case "readSP":  	// 배송정보 등록
 			return t.readSP(stub, args)	
-
+		case "delete":  	// 배송정보 삭제
+			return t.delete(stub, args)	
 	
 	default:
 		return shim.Error("IF-BLC-202| Invalid Smart Contract function name.")
@@ -106,7 +107,7 @@ func (t *SmartContract) registerSP(stub shim.ChaincodeStubInterface, args []stri
 	}
 
 
-	err = stub.PutState(shipp.DlvId, shipp)
+	err = stub.PutState(shipp.DlvId, shippccAsBytes)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -150,22 +151,67 @@ func (t *SmartContract) readSP(stub shim.ChaincodeStubInterface, args []string) 
 // 배송정보 삭제
 func (t *SmartContract) delete(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) != 1 {
-		return shim.Error("Incorrect number of arguments. Expecting 1")
+			return shim.Error("Incorrect number of arguments. Expecting 1")
 	}
-
-	A := args[0]
-
-	// Delete the key from the state in ledger
-	err := stub.DelState(A)
+	var dlvId string
+	dlvId = args[0]
+/*
+	// 해당 배송정보(운송장ID)가 존재하는지 조회
+	shippccAsBytes, err := stub.GetState(dlvId)
 	if err != nil {
-		return shim.Error("Failed to delete state")
+		return shim.Error("GetState Error: " + err.Error())
 	}
 
+	//배송정보(운송장ID)가 존재하지 않는 경우 메세지 처리
+	if shippccAsBytes == nil {
+		return shim.Error("dlvId : " + dlvId + "doesn't exists")
+	}
+*/
+
+        // 배송정보 존재하는지 조회
+	dateCheckMessage, err := _searchData(stub, dlvId); 
+	if dateCheckMessage != nil {
+		return shim.Error(dateCheckMessage)
+	}
+
+
+	// 스테이트 db에서 데이터 삭제
+	err = stub.DelState(dlvId)
+	if err != nil {
+			return shim.Error("Failed to delete state")
+	}
+
+	fmt.Printf("delete success", )
 	return shim.Success(nil)
 }
 
 
+
 // 배송정보 수정
+
+
+// 데이터 조회
+func (t *SmartContract) _searchData(stub shim.ChaincodeStubInterface, dlvId string) string {
+
+        var returnMessage string
+
+
+        // 해당 배송정보(운송장ID)가 존재하는지 조회
+        shippccAsBytes, err := stub.GetState(dlvId)
+        if err != nil {
+                //return shim.Error("GetState Error: " + err.Error())
+                returnMessage = "GetState Error: " + err.Error()
+        }
+
+        //배송정보(운송장ID)가 존재하지 않는 경우 메세지 처리
+        if shippccAsBytes == nil {
+                //return shim.Error("IF-BLC-601-002| Data searched by dlvId\"+\"" + dlvId + " doesn't exists")
+                returnMessage = "IF-BLC-601-002| Data searched by dlvId\"+\"" + dlvId + " doesn't exists"
+        }
+
+        return returnMessage
+
+}
 
 
 
