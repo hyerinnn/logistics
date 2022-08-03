@@ -33,12 +33,6 @@ type ShippLedger struct {
 
 }
 
-type dataResult struct {
-
-	Result string `json:"result"`
-	Data  []byte `json:"data"`
-
-}
 
 
 func (s *SmartContract) Init(stub shim.ChaincodeStubInterface) pb.Response {
@@ -60,6 +54,8 @@ func (t *SmartContract) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 			return t.readSP(stub, args)	
 		case "delete":  	// 배송정보 삭제
 			return t.delete(stub, args)	
+	//	case "update":  	// 배송정보 수정
+	//		return t.update(stub, args)	
 	
 	default:
 		return shim.Error("IF-BLC-202| Invalid Smart Contract function name.")
@@ -101,13 +97,22 @@ func (t *SmartContract) registerSP(stub shim.ChaincodeStubInterface, args []stri
 
 	shippccAsBytes, _ := json.Marshal(shipp)
 
-	var _, searchData = _searchData(stub, shipp.DlvId); 
 
-	// 이미 등록된 운송장 id인 경우
-	if searchData != nil {
+	// 등록된 아이디인지 확인
+	existIdCheck, returnMessage := _searchData(stub, shipp.DlvId); 
+	if returnMessage != "" {
+		return shim.Error(returnMessage)
+	}	
+
+	fmt.Println("########existIdCheck : " + string(existIdCheck))
+
+	// 이미 아이디가 있으면 에러
+	if existIdCheck == "true" {
 		return shim.Error("Error | \"+\"" + shipp.DlvId + " already exists.")
 	}
 
+
+	//블록에 저장
 	err := stub.PutState(shipp.DlvId, shippccAsBytes)
 	if err != nil {
 		return shim.Error(err.Error())
@@ -119,19 +124,23 @@ func (t *SmartContract) registerSP(stub shim.ChaincodeStubInterface, args []stri
 
 // 배송정보 단건 조회
 func (t *SmartContract) readSP(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	var err error
 	var dlvId string 
 	dlvId = args[0]
 
 	fmt.Println("######## 쿼리 호출 (dlvId :" + dlvId + ")########")
 
-	var resultMessage, searchData = _searchData(stub, dlvId); 
-	if resultMessage != "" {
-		return shim.Error("GetState Error: " + resultMessage)
+	shippccAsBytes, _ := stub.GetState(dlvId)
+	if err != nil {
+		return shim.Error("Error: " + err.Error())
+	}
+	if shippccAsBytes == nil {
+		return shim.Error("IF-BLC-301-002| Data searched by orderID\"+\"" + dlvId + " doesn't exists")
 	}
 
-	resultData := "{\"DlvId\":\"" + dlvId + "\",\"data\":\"" + string(searchData) + "\"}"
+	resultData := "{\"DlvId\":\"" + dlvId + "\",\"data\":\"" + string(shippccAsBytes) + "\"}"
 	fmt.Printf("Query Response:%s\n", resultData)
-	return shim.Success(searchData)
+	return shim.Success(shippccAsBytes)
 
 }
 
@@ -145,16 +154,18 @@ func (t *SmartContract) delete(stub shim.ChaincodeStubInterface, args []string) 
 	var dlvId string
 	dlvId = args[0]
 
-	var resultMessage, _ = _searchData(stub, dlvId); 
-
-	if resultMessage != "" {
-		return shim.Error("GetState Error: " + resultMessage)
+	// 등록된 아이디인지 확인
+	//existIdCheck, _ := _searchData(stub, dlvId); 
+/*
+	// 아이디가 없으면 에러
+	if existIdCheck == false {
+		return shim.Error("IF-BLC-601-002| Data searched by dlvId(" + dlvId + ") doesn't exists")
 	}
 
-	// 스테이트 db에서 데이터 삭제
+*/	// 스테이트 db에서 데이터 삭제
 	err := stub.DelState(dlvId)
 	if err != nil {
-			return shim.Error("Failed to delete state")
+		return shim.Error("Failed to delete state")
 	}
 
 	fmt.Printf("delete success")
@@ -162,32 +173,37 @@ func (t *SmartContract) delete(stub shim.ChaincodeStubInterface, args []string) 
 }
 
 
-func test(a int){
-	fmt.Println(a);
-}
-
-
 // 이미 등록된 데이터인지 체크하는 함수
-func  _searchData(stub shim.ChaincodeStubInterface, dlvId string) (returnMessage string, searchData []byte ) {
+func  _searchData(stub shim.ChaincodeStubInterface, dlvId string) (string, string) {
+
 
 
 	// 해당 배송정보(운송장ID)가 존재하는지 조회
 	searchData, err := stub.GetState(dlvId)
 	if err != nil {
-		returnMessage = "GetState Error: " + err.Error()
-		//return shim.Error("GetState Error: " + err.Error())
+		//returnMessage = "GetState Error: " + err.Error()
+				return "false", "Failed to getState"
+
 	}
-	
+/*	
 	//배송정보(운송장ID)가 존재하지 않는 경우 메세지 처리
 	if searchData == nil {
-		returnMessage = "IF-BLC-601-002| Data searched by dlvId \"+\"" + dlvId + " doesn't exists"
+		returnMessage = "IF-BLC-601-002| Data searched by dlvId(" + dlvId + ") doesn't exists"
 	}
+*/
 
-	return returnMessage, searchData
+	// 존재하면 true , 없으면 false
+	if searchData != nil {
+		return "true", ""
+	}
+	return "false", ""
 }
 
 
 // 배송정보 수정
+//func (t *SmartContract) update(stub shim.ChaincodeStubInterface, args []string) pb.Response {}
+
+
 
 
 
