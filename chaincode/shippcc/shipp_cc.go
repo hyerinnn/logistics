@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 	"encoding/json"
+	"bytes"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
 )
@@ -33,6 +34,14 @@ type ShippLedger struct {
 
 }
 
+
+
+type ResultData struct {
+
+	TxID string `json:"txID"`
+	Data []byte `json:"data"`
+
+}
 
 
 func (s *SmartContract) Init(stub shim.ChaincodeStubInterface) pb.Response {
@@ -140,9 +149,55 @@ func (t *SmartContract) readSP(stub shim.ChaincodeStubInterface, args []string) 
 
 	resultData := "{\"DlvId\":\"" + dlvId + "\",\"data\":\"" + string(shippccAsBytes) + "\"}"
 	fmt.Printf("Query Response:%s\n", resultData)
-	return shim.Success(shippccAsBytes)
 
+	txID := _getHash(stub, dlvId)
+
+
+
+
+//	resultAsBytes, _ := json.Marshal(result)
+
+//	return shim.Success(resultAsBytes)
+
+
+	var buffer bytes.Buffer
+	buffer.WriteString("[")
+	bArrayMemberAlreadyWritten := false
+	if bArrayMemberAlreadyWritten == true {
+		buffer.WriteString(",")
+	}
+
+	buffer.WriteString("{\"TxID\":")
+	buffer.WriteString("\"")
+	buffer.WriteString(txID)
+	buffer.WriteString("\"")
+
+	buffer.WriteString(", \"Data\":")
+	buffer.WriteString("\"")
+	buffer.WriteString(shippccAsBytes)
+	buffer.WriteString("\"")
+
+	buffer.WriteString("}")
+	bArrayMemberAlreadyWritten = true
+	buffer.WriteString("]")
+
+	return shim.Success(buffer.Bytes())
 }
+
+
+
+
+func _getHash(stub shim.ChaincodeStubInterface, id string) string {
+
+	GetTxID := stub.GetTxID()
+	fmt.Printf("GetTxID : " + GetTxID)
+	return GetTxID
+}
+
+
+
+
+
 
 
 // 배송정보 삭제
