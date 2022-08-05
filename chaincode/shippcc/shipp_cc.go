@@ -18,18 +18,18 @@ type SmartContract struct {
 
 type ShippLedger struct {
 
-	DlvId string `json:"dlvId"`			 		// 운송장 ID		
-	SlipNo string `json:"slipNo"`				// 운송장 번호
-	ComTcd string `json:"comTcd"`				// 택배사 코드
-	State string `json:"state"`		 			// 배송상태
-	ScanTime string `json:"scanTime"`			// 배송시각
+	DlvId string `json:"dlvId"`			 		// 운송장 ID	(필수)	
+	SlipNo string `json:"slipNo"`				// 운송장 번호	 (필수)	
+	ComTcd string `json:"comTcd"`				// 택배사 코드	 (필수)	
+	State string `json:"state"`		 			// 배송상태	     (필수)	
+	ScanTime string `json:"scanTime"`			// 배송시각	     (필수)	
 	Place string `json:"place"`					// 배송위치
-	Level string `json:"level"`					// 배송단계
+	Level string `json:"level"`					// 배송단계	     (필수)	
 	SalesNm string `json:"salesNm"`				// 배송기사
 	SalesTelNo1 string `json:"salesTelNo1"`		// 배송기사 핸드폰번호1
 	SalesTelNo2 string `json:"salesTelNo2"`		// 배송기사 핸드폰번호2
 	Remark string `json:"remark"`				// 비고
-	Id string `json:"id"`			 			// 운송장 세부 ID
+	Id string `json:"id"`			 			// 운송장 세부 ID  (필수)	
 	RegDate string `json:"regDate"`				// 등록일시
 	UpdDate string `json:"updDate"`				// 수정일시
 
@@ -117,7 +117,29 @@ func (t *SmartContract) registerSP(stub shim.ChaincodeStubInterface, args []stri
 		return shim.Error(err.Error())
 	}
 
-	return shim.Success(nil)
+
+	// 해시값 조회
+	txID := _getHash(stub, shipp.DlvId)
+
+	var buffer bytes.Buffer
+	buffer.WriteString("{")
+	bArrayMemberAlreadyWritten := false
+	if bArrayMemberAlreadyWritten == true {
+		buffer.WriteString(",")
+	}
+
+	buffer.WriteString("\"hash\":")
+	buffer.WriteString("\"")
+	buffer.WriteString(txID)
+	buffer.WriteString("\"")
+
+	bArrayMemberAlreadyWritten = true
+	buffer.WriteString("}")
+	
+
+	return shim.Success(buffer.Bytes())
+
+	//return shim.Success(nil)
 }
 
 
@@ -140,7 +162,7 @@ func (t *SmartContract) readSP(stub shim.ChaincodeStubInterface, args []string) 
 	resultData := "{\"DlvId\":\"" + dlvId + "\",\"data\":\"" + string(shippccAsBytes) + "\"}"
 	fmt.Printf("Query Response:%s\n", resultData)
 
-	// 해시값 조회
+	// 트랜잭션 해시값 조회
 	txID := _getHash(stub, dlvId)
 
 
@@ -151,12 +173,12 @@ func (t *SmartContract) readSP(stub shim.ChaincodeStubInterface, args []string) 
 		buffer.WriteString(",")
 	}
 
-	buffer.WriteString("{\"TxID\":")
+	buffer.WriteString("{\"hash\":")
 	buffer.WriteString("\"")
 	buffer.WriteString(txID)
 	buffer.WriteString("\"")
 
-	buffer.WriteString(", \"Data\":")
+	buffer.WriteString(", \"data\":")
 	buffer.WriteString("\"")
 	buffer.WriteString(string(shippccAsBytes))
 	buffer.WriteString("\"")
